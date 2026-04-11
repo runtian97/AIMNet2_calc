@@ -1,3 +1,13 @@
+# ⚠️ Repository migrated to [`aimnetcentral`](https://github.com/isayevlab/aimnetcentral)
+
+> This repository is **deprecated** and has been **migrated to [`isayevlab/aimnetcentral`](https://github.com/isayevlab/aimnetcentral)**.
+>
+> - Use *aimnetcentral* for all new development, bug fixes, and issues
+> - The current maintained codebase lives here: <https://github.com/isayevlab/aimnetcentral>
+> - This repository is kept only as a historical snapshot and will be archived
+
+---
+
 **__ Update 6/10/24 __**
 We release new code, suaitable for large molecules and perioric calculations. Old code available in the **old** branch. Models were re-compiled and are not compatible with the new code. 
 
