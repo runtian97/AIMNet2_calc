@@ -1,0 +1,61 @@
+# ───────────────────────────────────────────────────────────────────────────
+#  TEMPLATE 1: recommended (OAT-screened on 30 SN2 reactions)
+# ───────────────────────────────────────────────────────────────────────────
+#   coord_type : cart       (all optimizer stages)
+#   cos        : szts       (stabilized zero-temperature string)
+#   tsopt      : rsirfo
+#   irc        : eulerpc
+#
+#   Benchmark result on the 30-reaction test set:  29 / 30 PASS
+#   (PASS = IRC connectivity OK AND TS has exactly 1 imag freq)
+#
+#   Use this as your first choice unless you have a reason to pick another.
+
+reactions:
+  r_xyz: /absolute/path/to/r.xyz          # multi-frame reactant geometries
+  p_xyz: /absolute/path/to/p.xyz          # multi-frame product geometries,
+                                          # paired by frame index
+
+calc:
+  type:  aimnet
+  model: /absolute/path/to/aimnet2nse_0.jpt
+  charge: -1                              # same for every reaction in the batch
+  mult:   1
+
+workflow:
+  preopt:
+    max_cycles: 50
+    geom:
+      type: cart
+  interpol:
+    type: redund
+    between: 10
+  cos:
+    type: szts
+  opt:
+    type: lbfgs
+    align: True
+    rms_force: 0.01
+    max_step: 0.04
+  tsopt:
+    type: rsirfo
+    do_hess: True
+    max_cycles: 100
+    thresh: gau_tight
+    hessian_recalc: 7
+    geom:
+      type: cart
+  irc:
+    type: eulerpc
+    rms_grad_thresh: 0.0005
+  endopt:
+    fragments: True
+    geom:
+      type: cart
+
+batch:
+  workdir: runs
+  slim: true          # keep products up to the last successful stage
+                      # and split runs into success/ + fail/ subdirs
+  max_workers: null   # null = run all reactions concurrently (may OOM if many);
+                      # set to e.g. 50 to throttle (each worker ~500 MB CPU RAM)

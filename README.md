@@ -27,21 +27,81 @@ This package integrates the powerful AIMNet2 neural network potential into your 
 
 ### 1. Installation
 
-While package is in alpha stage and repository is private, please install into your conda envoronment manually with
+Versions below are the ones we've verified on an NVIDIA A40/A100 node with
+CUDA 12.4.  Copy-paste the whole block:
+
+```bash
+# 1. Fresh conda env with Python 3.11
+conda create -y -n aimpysis python=3.11
+conda activate aimpysis
+
+# 2. PyTorch 2.5.1 + CUDA 12.4
+conda install -y -c pytorch -c nvidia \
+    pytorch=2.5.1 pytorch-cuda=12.4
+
+# 3. pysisyphus runtime deps + chemistry / IO packages
+conda install -y -c conda-forge \
+    openbabel=3.1 ase=3.23 \
+    numpy=1.26 scipy=1.14 scikit-learn=1.5 sympy=1.13 numba=0.60 \
+    h5py=3.11 matplotlib=3.9 \
+    pyyaml=6.0 rmsd=1.5 joblib=1.4 natsort=8.4 psutil=6.0 \
+    jinja2=3.1 autograd=1.7 fabric=3.2 \
+    dask=2024.9 distributed=2024.9 requests=2.32
+
+# 4. torch_cluster wheel (conda build isn't published for torch 2.5.1)
+pip install torch_cluster==1.6.3 \
+    -f https://data.pyg.org/whl/torch-2.5.1+cu124.html
+
+# 5. pysisyphus from git — pypi is stale, we need the 0.8.0b1 dev branch
+pip install "git+https://github.com/eljost/pysisyphus.git@30880698"
+
+# 6. This package in editable mode
+pip install -e .
 ```
-# install requirements
-conda install -y pytorch pytorch-cuda=12.1 -c pytorch -c nvidia 
-conda install -y -c pyg pytorch-cluster
-conda install -y -c conda-forge openbabel ase
-## pysis requirements
-conda install -y -c conda-forge autograd dask distributed h5py fabric jinja2 joblib matplotlib numpy natsort psutil pyyaml rmsd scipy sympy scikit-learn
-# now should not do any pip installs
-pip install git+https://github.com/eljost/pysisyphus.git
-# finally, this repo
-git clone git@github.com:zubatyuk/aimnet2calc.git
-cd aimnet2calc
-python setup.py install
+
+Pinned versions (what the commands above install):
+
+| Package            | Version                        |
+| ------------------ | ------------------------------ |
+| python             | 3.11                           |
+| pytorch            | 2.5.1 (cuda 12.4, cudnn 9.1)   |
+| pytorch-cluster    | 1.6.3 (pip, from pyg wheel)    |
+| openbabel          | 3.1                            |
+| ase                | 3.23                           |
+| numpy              | 1.26                           |
+| scipy              | 1.14                           |
+| scikit-learn       | 1.5                            |
+| sympy              | 1.13                           |
+| numba              | 0.60                           |
+| h5py               | 3.11                           |
+| matplotlib         | 3.9                            |
+| pyyaml             | 6.0                            |
+| rmsd               | 1.5                            |
+| dask / distributed | 2024.9                         |
+| pysisyphus         | 0.8.0b1.dev155+g30880698 (git) |
+
+If your node has a different CUDA driver, change `pytorch-cuda=12.4` to match
+(PyTorch 2.5.1 is available for CUDA 11.8, 12.1, and 12.4 on the pytorch
+channel).  Also change the torch_cluster wheel URL accordingly
+(e.g. `torch-2.5.1+cu121.html`).  All other pins stay the same.
+
+Sanity check after install:
+
+```bash
+python -c "from aimnet2calc import AIMNet2Calculator; print('ok')"
+python -c "from aimnet2calc.aimnet2pysis import AIMNet2Pysis, BatchGPUServer; print('ok')"
+python -c "from aimnet2calc.batch_run import main; print('ok')"
 ```
+
+### Entry points installed
+
+| Command          | Purpose                                             |
+| ---------------- | --------------------------------------------------- |
+| `aimnet2pysis`   | single-reaction wrapper (drop-in for `pysis`)       |
+| `aimnet2-batch`  | `batch_run` CLI: one YAML, many reactions, 1 GPU   |
+
+`aimnet2-batch input.yml` is equivalent to
+`python -m aimnet2calc.batch_run input.yml`.
 
 ### 2. Available interfaces
 
