@@ -57,6 +57,8 @@ Example YAML (TS-only)
 
 Usage
 -----
+    aimnet2-batch-pysis input.yml
+    # or equivalently
     python -m aimnet2calc.batch_run input.yml
 """
 
@@ -293,7 +295,7 @@ def run_batch(cfg: dict):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        prog="aimnet2-batch",
+        prog="aimnet2-batch-pysis",
         description=__doc__.split("\n\n")[0],
     )
     ap.add_argument("input_yaml", type=Path)

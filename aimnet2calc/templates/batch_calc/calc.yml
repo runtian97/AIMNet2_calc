@@ -1,0 +1,39 @@
+# ───────────────────────────────────────────────────────────────────────────
+#  TEMPLATE: batch single-point  energy / forces / hessian (+ optional thermal)
+# ───────────────────────────────────────────────────────────────────────────
+#   One YAML → one multi-frame XYZ → everything packed into
+#   <workdir>/results.h5, grouped by atom count.  Each atom-count group
+#   `NNN/` holds a stack of same-shape arrays.
+#
+#   Thermal properties (H / S / G via ASE IdealGasThermo) are toggled with
+#   `thermal.enabled`.  Set to false (or delete the whole `thermal:` block)
+#   to skip.  `thermal.enabled: true` requires `properties.hessian: true`.
+#
+#   CLI: aimnet2-batch-calc <this>.yml
+
+molecules:
+  mol_xyz: /absolute/path/to/mols.xyz     # multi-frame XYZ (single-molecule
+                                          # xyz also works)
+
+calc:
+  type: aimnet
+  model: /absolute/path/to/aimnet2nse_0.jpt
+  charge: 0                                # applied to every molecule
+  mult:   1
+
+properties:
+  energy:  true
+  forces:  true
+  hessian: true                            # required if thermal.enabled: true
+
+thermal:
+  enabled:         true        # flip to false to skip thermal (or delete block)
+  temperature:     298.15      # K
+  pressure:        101325      # Pa
+  geometry:        nonlinear   # linear / nonlinear / monatomic
+  symmetry_number: 1
+  ignore_imag_modes: true
+
+batch:
+  workdir: calc_runs
+  max_batch_size: null         # null = one forward pass per atom-count group

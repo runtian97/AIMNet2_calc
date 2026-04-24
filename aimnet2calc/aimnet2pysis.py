@@ -292,11 +292,6 @@ def _patch_cos_for_aimnet_batch():
     ChainOfStates.calculate_forces = _batch_calculate_forces
 
 
-def run_pysis():
-    from pysisyphus import run
-    run.CALC_DICT['aimnet'] = AIMNet2Pysis
-    _patch_cos_for_aimnet_batch()
-    run.run()
 
 
 # ── Cross-reaction GPU batching ───────────────────────────────────────────────

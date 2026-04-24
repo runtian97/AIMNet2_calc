@@ -1,0 +1,31 @@
+# ───────────────────────────────────────────────────────────────────────────
+#  TEMPLATE: batch geometry optimisation (ASE LBFGS)
+# ───────────────────────────────────────────────────────────────────────────
+#   One YAML → one multi-frame XYZ → many ASE LBFGS minimisations running
+#   concurrently through a shared BatchGPUServer.
+#
+#   Output: a single multi-frame XYZ  <workdir>/optimized.xyz  in input order.
+#   Each frame's comment line:
+#       converged=<True|False>  energy=<eV>  max_force=<eV/Å>
+#
+#   CLI: aimnet2-batch-geom <this>.yml
+
+molecules:
+  mol_xyz: /absolute/path/to/mols.xyz   # multi-frame XYZ, one molecule per frame
+
+calc:
+  type: aimnet
+  model: /absolute/path/to/aimnet2nse_0.jpt
+  charge: 0                              # applied to every molecule
+  mult:   1
+
+optimization:
+  fmax: 0.02                             # eV/Å convergence threshold
+  max_steps: 500
+
+batch:
+  workdir: opt_runs
+  max_workers: null                      # null = run all concurrently;
+                                         # set to e.g. 50 when you have
+                                         # many molecules (each worker
+                                         # ~500 MB CPU RAM)

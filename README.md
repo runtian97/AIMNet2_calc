@@ -95,13 +95,20 @@ python -c "from aimnet2calc.batch_run import main; print('ok')"
 
 ### Entry points installed
 
-| Command          | Purpose                                             |
-| ---------------- | --------------------------------------------------- |
-| `aimnet2pysis`   | single-reaction wrapper (drop-in for `pysis`)       |
-| `aimnet2-batch`  | `batch_run` CLI: one YAML, many reactions, 1 GPU   |
+| Command                 | Purpose                                              |
+| ----------------------- | ---------------------------------------------------- |
+| `aimnet2-batch-pysis`   | Batch pysisyphus pipeline: preopt → NEB → TSopt →    |
+|                         | IRC → endopt for many reactions in a single YAML,    |
+|                         | all sharing one GPU via BatchGPUServer.              |
 
-`aimnet2-batch input.yml` is equivalent to
+`aimnet2-batch-pysis input.yml` is equivalent to
 `python -m aimnet2calc.batch_run input.yml`.
+
+| Command                 | Purpose                                              |
+| ----------------------- | ---------------------------------------------------- |
+| `aimnet2-batch-geom`    | Batch geometry optimisation (ASE LBFGS)              |
+| `aimnet2-batch-calc`    | Batch single-point energy / forces / hessian         |
+|                         | (+ optional thermal H / S / G via IdealGasThermo)    |
 
 ### 2. Available interfaces
 

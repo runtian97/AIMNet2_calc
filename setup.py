@@ -8,7 +8,11 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        "aimnet2calc": ["templates/*.yml", "templates/README.md"],
+        "aimnet2calc": [
+            "templates/README.md",
+            "templates/*/*.yml",
+            "templates/*/.gitkeep",
+        ],
     },
     install_requires=[
         # Core PyTorch stack — pin range we've tested on.
@@ -34,10 +38,17 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            # original single-reaction entry point
-            "aimnet2pysis=aimnet2calc.aimnet2pysis:run_pysis",
-            # batch driver: one YAML → parallel workers + BatchGPUServer
-            "aimnet2-batch=aimnet2calc.batch_run:main",
+            # one YAML → many reactions through pysisyphus pipeline
+            # (preopt → NEB → TSopt → IRC → endopt), sharing one GPU via
+            # BatchGPUServer that coalesces force / hessian requests
+            "aimnet2-batch-pysis=aimnet2calc.batch_run:main",
+            # one YAML → many molecules through ASE LBFGS geometry opt,
+            # cross-molecule batching via the same BatchGPUServer
+            "aimnet2-batch-geom=aimnet2calc.batch_geom_opt:main",
+            # one YAML → single-point energy / forces / hessian (+ optional
+            # thermal H/S/G) on many molecules, one batched forward per
+            # atom-count group
+            "aimnet2-batch-calc=aimnet2calc.batch_calc:main",
         ],
     },
 )

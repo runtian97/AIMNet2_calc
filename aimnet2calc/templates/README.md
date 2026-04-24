@@ -1,14 +1,29 @@
-# Ready-to-use batch_run templates
+# Ready-to-use `aimnet2-batch-*` templates
 
-Five input-YAML templates for `python -m aimnet2calc.batch_run`, ranked by
-measured PASS rate on a 30-reaction SN2 screen.  Each file is a complete,
-self-contained input — copy it, edit the `r_xyz`/`p_xyz`/`model` paths and
-charge/mult to match your dataset, then run:
+Templates are grouped by the CLI / task that consumes them.  Copy the
+template closest to your use case, edit the paths (and charge / mult) to
+match your dataset, then run the matching `aimnet2-batch-*` command.
 
-    python -m aimnet2calc.batch_run <template>.yml
+## Directory layout
 
-PASS criterion: IRC connectivity (endpoints map to R / P) AND exactly 1
-imaginary frequency at the TS.
+```
+templates/
+├── batch_pysis/        ← pysisyphus reaction pipeline
+│                         (preopt → NEB → TSopt → IRC → endopt)
+│                         CLI:  aimnet2-batch-pysis
+├── batch_geom_opt/     ← geometry optimisation (ASE LBFGS)
+│                         CLI:  aimnet2-batch-geom
+└── batch_calc/         ← single-point energy / forces / hessian, plus
+                          optional thermal properties (H / S / G) via
+                          IdealGasThermo in the same pass.
+                          CLI:  aimnet2-batch-calc
+```
+
+## `batch_pysis/`
+
+Five input-YAML templates for `aimnet2-batch-pysis`, ranked by measured PASS
+rate on a 30-reaction SN2 screen (PASS = IRC connectivity OK AND TS has
+exactly one imaginary frequency):
 
 | File                    | coord  | cos   | tsopt  | irc     | PASS  | wall |
 | ----------------------- | ------ | ----- | ------ | ------- | ----- | ---- |
@@ -18,26 +33,49 @@ imaginary frequency at the TS.
 | 04_baseline.yml         | redund | neb   | rsirfo | eulerpc | 27/30 | 517s |
 | 05_irc_rk4.yml          | redund | neb   | rsirfo | rk4     | 26/30 | 627s |
 
-Defaults to start with:
+Start with `01_recommended.yml` unless you have a reason to pick another.
 
-  * unless you know better, use **01_recommended.yml**
-  * use **02_fast.yml** when throughput matters more than the last 1-2 PASSes
-  * use **03_string_method.yml** if NEB struggles on your barriers
-  * use **04_baseline.yml** as a debugging reference (pysisyphus defaults)
-  * use **05_irc_rk4.yml** only when eulerpc IRC gives unstable modes
+## `batch_geom_opt/`
 
-Notes on the other options that were tested but didn't make the top 5:
-  * `coord=dlc`               slightly lower PASS than cart/redund (25/30)
-  * `cos=gs` (growing string) never converged on this SN2 set (0/30)
-  * `tsopt=rsprfo`            slower, 1 PASS fewer than rsirfo (26/30)
-  * `tsopt=trim`              many failures (11/30)
-  * `irc=gs`                  many failures (17/30)
+Single template `geom_opt.yml` for `aimnet2-batch-geom`.  Takes a multi-frame
+XYZ (one molecule per frame), runs ASE LBFGS on every molecule in parallel
+sharing one GPU via `BatchGPUServer`, and sorts results into
+`converged/` vs `not_converged/`.
 
-All templates use these reusable defaults, which you rarely need to change:
+## `batch_calc/`
 
-  * `opt.type: lbfgs`, `opt.align: True`, `rms_force: 0.01`, `max_step: 0.04`
-  * `tsopt.do_hess: True`, `tsopt.hessian_recalc: 7`, `tsopt.thresh: gau_tight`
-  * `interpol.type: redund`, `interpol.between: 10`
-  * `endopt.fragments: True`
-  * `batch.slim: true` (removes per-run intermediate files; keeps products up
-    to the last successful stage)
+Single template `calc.yml` for `aimnet2-batch-calc`.  Takes a multi-frame
+XYZ, groups molecules by atom count, and does one batched AIMNet2 forward
+per group.  Outputs a single `results.h5` keyed by atom count (`NNN/`
+subgroups).
+
+Properties toggled in the YAML:
+
+| flag in `properties` | saved in each `NNN/` group   | cost     |
+| -------------------- | ---------------------------- | -------- |
+| `energy: true`       | `energy (B,) eV`             | baseline |
+| `forces: true`       | `forces (B, N, 3) eV/Å`      | +10-20%  |
+| `hessian: true`      | `hessian (B, 3N, 3N) eV/Å²`  | +5-10×   |
+
+Optionally also compute H / S / G per molecule with ASE `IdealGasThermo`:
+
+| `thermal.enabled`   | additional saved arrays            |
+| ------------------- | ---------------------------------- |
+| `true`              | `enthalpy (B,) eV`                 |
+|                     | `entropy (B,) eV/K`                |
+|                     | `gibbs_energy (B,) eV`             |
+| `false` (or omitted)| none (skip thermal step)           |
+
+The `thermal:` block also carries the parameters (temperature, pressure,
+geometry, symmetry_number, ignore_imag_modes).  `thermal.enabled: true`
+requires `properties.hessian: true`.
+
+## Common options that apply to every CLI
+
+Defaults to start with (rarely need to change):
+  * `calc.type: aimnet` and `calc.model: …`
+  * `batch.slim: true` — keeps only essential outputs per run, splits into
+    success / fail subdirectories
+  * `batch.max_workers: null` — defaults to running all items concurrently;
+    set a finite cap (e.g. `50`) when you have hundreds of items to avoid
+    CPU / RAM pressure
